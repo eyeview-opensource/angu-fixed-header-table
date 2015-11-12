@@ -8,9 +8,9 @@
         .module('anguFixedHeaderTable', [])
         .directive('fixedHeader', fixedHeader);
 
-    fixedHeader.$inject = ['$timeout'];
+    fixedHeader.$inject = ['$timeout', '$window'];
 
-    function fixedHeader($timeout) {
+    function fixedHeader($timeout, $window) {
         return {
             restrict: 'A',
             link: link
@@ -18,7 +18,16 @@
 
         function link($scope, $elem, $attrs, $ctrl) {
             var elem = $elem[0];
-
+            var tableHeight;
+            function getHeight(){
+                var windowHeight = $window.innerHeight;
+                var table = $('table').offset().top;
+                tableHeight = (windowHeight - table) - 85 + 'px'
+            }
+            $($window).resize(function() {
+                getHeight();
+                transformTable();
+            })
             // wait for data to load and then transform the table
             $scope.$watch(tableDataLoaded, function(isTableDataLoaded) {
                 if (isTableDataLoaded) {
@@ -34,6 +43,7 @@
             }
 
             function transformTable() {
+                getHeight();
                 // reset display styles so column widths are correct when measured below
                 angular.element(elem.querySelectorAll('thead, tbody, tfoot')).css('display', '');
 
@@ -62,7 +72,7 @@
 
                     angular.element(elem.querySelectorAll('tbody')).css({
                         'display': 'block',
-                        'height': $attrs.tableHeight || 'inherit',
+                        'height':  tableHeight,
                         'overflow': 'auto'
                     });
 
