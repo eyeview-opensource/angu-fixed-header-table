@@ -18,16 +18,29 @@
 
         function link($scope, $elem, $attrs, $ctrl) {
             var elem = $elem[0];
-            var tableHeight;
-            function getHeight(){
-                var windowHeight = $window.innerHeight;
-                var table = $('table').offset().top;
-                tableHeight = (windowHeight - table) - 85 + 'px'
+
+            function getHeight(e) {
+                e.style.display = 'none';
+                var p = angular.element(e.parentElement);
+                var height = window.innerHeight - p.offset().top;
+                var i = p[0];
+                while (i.parentElement && i.parentElement != document.body) {
+                    i = i.parentElement;
+                    try {
+                        height -= parseFloat(window.getComputedStyle(i).paddingBottom.replace(/^(-?(?:\d)?(?:.\d+)?)[A-Za-z%]*$/, '$1'));
+                    } catch (x) {}
+                }
+                e.style.display = '';
+                return height;
             }
-            $($window).resize(function() {
-                getHeight();
-                transformTable();
-            })
+
+            if ($attrs.tableHeight === 'auto' || !$attrs.tableHeight) {
+                $($window).on('resize', transformTable);
+
+                $scope.$on('$destroy', function () {
+                    $($window).off('resize', transformTable);
+                });
+            }
             // wait for data to load and then transform the table
             $scope.$watch(tableDataLoaded, function(isTableDataLoaded) {
                 if (isTableDataLoaded) {
@@ -43,12 +56,14 @@
             }
 
             function transformTable() {
-                getHeight();
                 // reset display styles so column widths are correct when measured below
                 angular.element(elem.querySelectorAll('thead, tbody, tfoot')).css('display', '');
 
                 // wrap in $timeout to give table a chance to finish rendering
                 $timeout(function () {
+                    var height = ($attrs.tableHeight === 'auto' || !$attrs.tableHeight) ?
+                    getHeight(elem) - angular.element(elem.querySelectorAll('thead')).height() - angular.element(elem.querySelectorAll('tfoot')).height() :
+                        $attrs.tableHeight;
                     // set widths of columns
                     angular.forEach(elem.querySelectorAll('tr:first-child th'), function (thElem, i) {
 
@@ -72,7 +87,7 @@
 
                     angular.element(elem.querySelectorAll('tbody')).css({
                         'display': 'block',
-                        'height':  tableHeight,
+                        'height':  height,
                         'overflow': 'auto'
                     });
 
