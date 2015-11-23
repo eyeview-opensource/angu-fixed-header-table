@@ -22,13 +22,13 @@
             function getHeight(e) {
                 e.style.display = 'none';
                 var p = angular.element(e.parentElement);
-                var height = window.innerHeight - p.offset().top;
+                var height = window.innerHeight - p.offset().top - p.height();
                 var i = p[0];
-                while (i.parentElement && i.parentElement != document.body) {
-                    i = i.parentElement;
+                while (i && i != document.body) {
                     try {
                         height -= parseFloat(window.getComputedStyle(i).paddingBottom.replace(/^(-?(?:\d)?(?:.\d+)?)[A-Za-z%]*$/, '$1'));
                     } catch (x) {}
+                    i = i.parentElement;
                 }
                 e.style.display = '';
                 return height;
@@ -41,11 +41,22 @@
                     $($window).off('resize', transformTable);
                 });
             }
+
+            $scope.$on('ngTable:afterReloadData', function () {
+                console.log('post reload');
+                transformTable();
+            });
             // wait for data to load and then transform the table
             $scope.$watch(tableDataLoaded, function(isTableDataLoaded) {
                 if (isTableDataLoaded) {
                     transformTable();
                 }
+            });
+
+            $elem.css({ position : 'relative' });
+            angular.element(elem.querySelector('thead')).css({
+                position: 'absolute',
+                zIndex: 10
             });
 
             function tableDataLoaded() {
@@ -57,33 +68,44 @@
 
             function transformTable() {
                 // reset display styles so column widths are correct when measured below
-                angular.element(elem.querySelectorAll('thead, tbody, tfoot')).css('display', '');
-
-                // wrap in $timeout to give table a chance to finish rendering
                 $timeout(function () {
+                    angular.element(elem.querySelectorAll('tbody, tfoot, td, th, tr'))
+                        .attr('style', '');
+                    window.getComputedStyle(elem); // force re-render
+                    var body = elem.querySelector('tbody');
+
+                    if (!body) {
+                        return;
+                    }
+                    var shadow = body.querySelector('tr.my-shadow-head-row');
+                    if (shadow) {
+                        body.removeChild(shadow);
+                    }
+                    var clonedHead = elem.querySelector('thead tr').cloneNode(true);
+                    clonedHead.style.visibility = 'hidden';
+                    clonedHead.style.borderBottom = '0';
+                    clonedHead.className = clonedHead.className ? clonedHead.className + ' my-shadow-head-row' : 'my-shadow-head-row';
+                    body.querySelector('tr:first-child') ? body.insertBefore(clonedHead, body.querySelector('tr:first-child')) :
+                        body.appendChild(clonedHead);
+
+                    // wrap in $timeout to give table a chance to finish rendering
+
                     var height = ($attrs.tableHeight === 'auto' || !$attrs.tableHeight) ?
                     getHeight(elem) - angular.element(elem.querySelectorAll('thead')).height() - angular.element(elem.querySelectorAll('tfoot')).height() :
                         $attrs.tableHeight;
+
                     // set widths of columns
-                    angular.forEach(elem.querySelectorAll('tr:first-child th'), function (thElem, i) {
+                    angular.forEach(clonedHead.querySelectorAll('th'), function (headElem, i) {
 
-                        var tdElems = elem.querySelector('tbody tr:first-child td:nth-child(' + (i + 1) + ')');
-                        var tfElems = elem.querySelector('tfoot tr:first-child td:nth-child(' + (i + 1) + ')');
+                        var thElem = elem.querySelector('thead tr th:nth-child(' + (i + 1) + ')');
 
-                        var columnWidth = tdElems ? tdElems.offsetWidth : thElem.offsetWidth;
-                        if (tdElems) {
-                            tdElems.style.width = columnWidth + 'px';
-                        }
+                        var columnWidth = headElem.offsetWidth;
                         if (thElem) {
                             thElem.style.width = columnWidth + 'px';
-                        }
-                        if (tfElems) {
-                            tfElems.style.width = columnWidth + 'px';
+                            thElem.style.minWidth = '0px';
+                            thElem.style.maxWidth = '100%';
                         }
                     });
-
-                    // set css styles on thead and tbody
-                    angular.element(elem.querySelectorAll('thead, tfoot')).css('display', 'block');
 
                     angular.element(elem.querySelectorAll('tbody')).css({
                         'display': 'block',
@@ -105,3 +127,4 @@
         }
     }
 })();
+
