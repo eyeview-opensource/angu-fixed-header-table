@@ -42,10 +42,7 @@
                 });
             }
 
-            $scope.$on('ngTable:afterReloadData', function () {
-                console.log('post reload');
-                transformTable();
-            });
+            $scope.$on('ngTable:afterReloadData', transformTable);
             // wait for data to load and then transform the table
             $scope.$watch(tableDataLoaded, function(isTableDataLoaded) {
                 if (isTableDataLoaded) {
@@ -115,6 +112,13 @@
                     getHeight(elem) - angular.element(elem.querySelectorAll('thead')).height() - angular.element(elem.querySelectorAll('tfoot')).height() :
                         $attrs.tableHeight;
 
+                    angular.element(elem.querySelectorAll('tbody')).css({
+                        'display': 'block',
+                        'height':  height,
+                        'overflow': 'auto'
+                    });
+                    angular.element(elem.querySelector('tfoot')).css('display', 'block');
+
                     // set widths of columns
                     angular.forEach(clonedHead.querySelectorAll('th'), function (headElem, i) {
 
@@ -136,28 +140,9 @@
                             });
                         }
                     });
-
-                    angular.element(elem.querySelector('tfoot')).css('display', 'block');
-
-                    angular.element(elem.querySelectorAll('tbody')).css({
-                        'display': 'block',
-                        'height':  height,
-                        'overflow': 'auto'
-                    });
-
-                    // reduce width of last column by width of scrollbar
-                    var tbody = elem.querySelector('tbody');
-                    var scrollBarWidth = tbody.offsetWidth - tbody.clientWidth;
-                    if (scrollBarWidth > 0) {
-                        // for some reason trimming the width by 2px lines everything up better
-                        scrollBarWidth -= 2;
-                        var lastColumn = elem.querySelector('tbody tr:first-child td:last-child');
-                        lastColumn.style.width = (lastColumn.offsetWidth - scrollBarWidth) + 'px';
-                    }
                 });
             }
         }
     }
 })();
-
 
