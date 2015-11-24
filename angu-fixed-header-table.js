@@ -53,10 +53,12 @@
                 }
             });
 
-            $elem.css({ position : 'relative' });
-            angular.element(elem.querySelector('thead')).css({
-                position: 'absolute',
-                zIndex: 10
+            $timeout(function(){
+                $elem.css({ position : 'relative' });
+                angular.element(elem.querySelector('thead')).css({
+                    position: 'absolute',
+                    zIndex: 10
+                });
             });
 
             function tableDataLoaded() {
@@ -77,16 +79,35 @@
                     if (!body) {
                         return;
                     }
-                    var shadow = body.querySelector('tr.my-shadow-head-row');
-                    if (shadow) {
-                        body.removeChild(shadow);
+                    var shadow = body.querySelectorAll('tr.my-shadow-head-row');
+                    if (shadow.length > 0) {
+                        angular.forEach(shadow, function(sh) {
+                            sh.parentNode.removeChild(sh);
+                        });
                     }
-                    var clonedHead = elem.querySelector('thead tr').cloneNode(true);
-                    clonedHead.style.visibility = 'hidden';
-                    clonedHead.style.borderBottom = '0';
-                    clonedHead.className = clonedHead.className ? clonedHead.className + ' my-shadow-head-row' : 'my-shadow-head-row';
-                    body.querySelector('tr:first-child') ? body.insertBefore(clonedHead, body.querySelector('tr:first-child')) :
-                        body.appendChild(clonedHead);
+                    var clonedHead;
+                    var clonedHeadLength = 0;
+                    // Only partial support for multiple thead rows. May beed more work
+                    _.forEachRight(elem.querySelectorAll('thead tr'), function (e) {
+                        var c = e.cloneNode(true);
+                        c.style.visibility = 'hidden';
+                        c.style.borderBottom = '0';
+                        c.className = c.className ? c.className + ' my-shadow-head-row' : 'my-shadow-head-row';
+                        if (clonedHeadLength < c.querySelectorAll('th').length) {
+                            clonedHead = c;
+                            clonedHeadLength = c.querySelectorAll('th').length;
+                        }
+
+                        var firstRow = body.querySelector('tr:first-child');
+                        if (firstRow) {
+                            body.insertBefore(c, firstRow);
+                        } else {
+                            body.appendChild(c);
+                        }
+                    });
+
+
+
 
                     // wrap in $timeout to give table a chance to finish rendering
 
@@ -98,6 +119,8 @@
                     angular.forEach(clonedHead.querySelectorAll('th'), function (headElem, i) {
 
                         var thElem = elem.querySelector('thead tr th:nth-child(' + (i + 1) + ')');
+                        var tfElems = elem.querySelectorAll('tfoot tr td:nth-child(' + (i + 1) + ')');
+
 
                         var columnWidth = headElem.offsetWidth;
                         if (thElem) {
@@ -105,7 +128,16 @@
                             thElem.style.minWidth = '0px';
                             thElem.style.maxWidth = '100%';
                         }
+                        if (tfElems.length > 0) {
+                            angular.element(tfElems).css({
+                                width : columnWidth + 'px',
+                                minWidth : '0px',
+                                maxWidth : '100%'
+                            });
+                        }
                     });
+
+                    angular.element(elem.querySelector('tfoot')).css('display', 'block');
 
                     angular.element(elem.querySelectorAll('tbody')).css({
                         'display': 'block',
@@ -127,4 +159,5 @@
         }
     }
 })();
+
 
