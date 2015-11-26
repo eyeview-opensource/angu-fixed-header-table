@@ -56,6 +56,7 @@
                 elem.parentNode.insertBefore(wrap, elem);
                 wrap.appendChild(elem);
                 wrap.style.position = 'relative';
+                wrap.style.xIndex = 1;
                 wrap.style.overflowX = 'auto';
 
                 scrollable = document.createElement('div');
@@ -80,7 +81,7 @@
                         tableLayout: 'fixed',
                         margin: 0,
                         padding: 0,
-                        zIndex: 1000
+                        zIndex: 10
                     });
                     cloned.style.visibility = 'hidden';
                 }
@@ -115,6 +116,7 @@
                     });
                     $scrollable.css({
                         display: 'block',
+                        width: '100%',
                         height: height + 'px',
                         overflowY: 'auto',
                         position: 'absolute'
@@ -125,3 +127,4 @@
         }
     }
 })();
+
