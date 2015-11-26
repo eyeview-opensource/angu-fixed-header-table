@@ -16,7 +16,7 @@
             link: link
         };
 
-        function link($scope, $elem, $attrs, $ctrl) {
+        function link($scope, $elem, $attrs) {
             var elem = $elem[0];
             var wrap, $scrollable, scrollable;
 
@@ -96,14 +96,16 @@
                 // reset display styles so column widths are correct when measured below
                 $timeout(function () {
                     var height = ($attrs.tableHeight === 'auto' || !$attrs.tableHeight) ?
-                    getHeight(elem) - angular.element(elem.querySelectorAll('thead')).height() - angular.element(elem.querySelectorAll('tfoot')).height() :
-                        $attrs.tableHeight;
+                                        getHeight(wrap) : $attrs.tableHeight;
 
                     var shadows = wrap.querySelectorAll('table.shadowed');
                     angular.forEach(elem.querySelectorAll('thead, tfoot'), function (cont, index) {
                         angular.forEach(cont.querySelectorAll('tr'), function(row, rowIndex) {
                            angular.forEach(row.querySelectorAll('td,th'), function(cell, cellIndex) {
-                               var el = shadows[index].querySelector('tr:nth-child(' + (rowIndex+1) + ') ' + cell.nodeName + ':nth-child(' + (cellIndex+1)  + ')');
+                               var el = shadows[index].querySelector(
+                                    'tr:nth-child(' + (rowIndex+1) + ') ' +
+                                    cell.nodeName + ':nth-child(' + (cellIndex+1)  + ')');
+
                                el.style.width = cell.offsetWidth + 'px';
                                el.style.minWidth = '0px';
                                el.style.maxWidth = '100%';
@@ -120,5 +122,4 @@
         }
     }
 })();
-
 
