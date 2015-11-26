@@ -16,8 +16,9 @@
             link: link
         };
 
-        function link($scope, $elem, $attrs, $ctrl) {
+        function link($scope, $elem, $attrs) {
             var elem = $elem[0];
+            var wrap, $scrollable, scrollable;
 
             function getHeight(e) {
                 e.style.display = 'none';
@@ -51,11 +52,39 @@
             });
 
             $timeout(function(){
-                $elem.css({ position : 'relative' });
-                angular.element(elem.querySelector('thead')).css({
-                    position: 'absolute',
-                    zIndex: 10
-                });
+                wrap = document.createElement('div');
+                elem.parentNode.insertBefore(wrap, elem);
+                wrap.appendChild(elem);
+                wrap.style.position = 'relative';
+                wrap.style.xIndex = 1;
+                wrap.style.overflowX = 'auto';
+
+                scrollable = document.createElement('div');
+                wrap.appendChild(scrollable);
+                scrollable.appendChild(elem);
+                //scrollable.style.margin = window.getComputedStyle(elem).margin;
+                $scrollable = angular.element(scrollable);
+                elem.style.margin = '0px';
+
+                var clone = elem.querySelectorAll('thead, tfoot');
+                for (var i=0; i < clone.length; i++) {
+                    var tShadow = document.createElement('table');
+                    var cloned = clone[i].cloneNode(true);
+                    wrap.appendChild(tShadow);
+                    tShadow.className = (elem.className||'') + ' shadowed';
+                    elem.replaceChild(cloned, clone[i]);
+                    tShadow.appendChild(clone[i]);
+                    angular.element(tShadow).css({
+                        position: 'absolute',
+                        top: cloned.nodeName === 'THEAD' ? 0 : 'auto',
+                        bottom: cloned.nodeName === 'TBODY' ? 0 : 'auto',
+                        tableLayout: 'fixed',
+                        margin: 0,
+                        padding: 0,
+                        zIndex: 10
+                    });
+                    cloned.style.visibility = 'hidden';
+                }
             });
 
             function tableDataLoaded() {
@@ -68,81 +97,33 @@
             function transformTable() {
                 // reset display styles so column widths are correct when measured below
                 $timeout(function () {
-                    angular.element(elem.querySelectorAll('tbody, tfoot, td, th, tr'))
-                        .attr('style', '');
-                    window.getComputedStyle(elem); // force re-render
-                    var body = elem.querySelector('tbody');
-
-                    if (!body) {
-                        return;
-                    }
-                    var shadow = body.querySelectorAll('tr.my-shadow-head-row');
-                    if (shadow.length > 0) {
-                        angular.forEach(shadow, function(sh) {
-                            sh.parentNode.removeChild(sh);
-                        });
-                    }
-                    var clonedHead;
-                    var clonedHeadLength = 0;
-                    // Only partial support for multiple thead rows. May beed more work
-                    _.forEachRight(elem.querySelectorAll('thead tr'), function (e) {
-                        var c = e.cloneNode(true);
-                        c.style.visibility = 'hidden';
-                        c.style.borderBottom = '0';
-                        c.className = c.className ? c.className + ' my-shadow-head-row' : 'my-shadow-head-row';
-                        if (clonedHeadLength < c.querySelectorAll('th').length) {
-                            clonedHead = c;
-                            clonedHeadLength = c.querySelectorAll('th').length;
-                        }
-
-                        var firstRow = body.querySelector('tr:first-child');
-                        if (firstRow) {
-                            body.insertBefore(c, firstRow);
-                        } else {
-                            body.appendChild(c);
-                        }
-                    });
-
-
-
-
-                    // wrap in $timeout to give table a chance to finish rendering
-
                     var height = ($attrs.tableHeight === 'auto' || !$attrs.tableHeight) ?
-                    getHeight(elem) - angular.element(elem.querySelectorAll('thead')).height() - angular.element(elem.querySelectorAll('tfoot')).height() :
-                        $attrs.tableHeight;
+                                        getHeight(wrap) : $attrs.tableHeight;
 
-                    angular.element(elem.querySelectorAll('tbody')).css({
-                        'display': 'block',
-                        'height':  height,
-                        'overflow': 'auto'
+                    var shadows = wrap.querySelectorAll('table.shadowed');
+                    angular.forEach(elem.querySelectorAll('thead, tfoot'), function (cont, index) {
+                        angular.forEach(cont.querySelectorAll('tr'), function(row, rowIndex) {
+                           angular.forEach(row.querySelectorAll('td,th'), function(cell, cellIndex) {
+                               var el = shadows[index].querySelector(
+                                    'tr:nth-child(' + (rowIndex+1) + ') ' +
+                                    cell.nodeName + ':nth-child(' + (cellIndex+1)  + ')');
+
+                               el.style.width = cell.offsetWidth + 'px';
+                               el.style.minWidth = '0px';
+                               el.style.maxWidth = '100%';
+                           });
+                        });
                     });
-                    angular.element(elem.querySelector('tfoot')).css('display', 'block');
-
-                    // set widths of columns
-                    angular.forEach(clonedHead.querySelectorAll('th'), function (headElem, i) {
-
-                        var thElem = elem.querySelector('thead tr th:nth-child(' + (i + 1) + ')');
-                        var tfElems = elem.querySelectorAll('tfoot tr td:nth-child(' + (i + 1) + ')');
-
-
-                        var columnWidth = headElem.offsetWidth;
-                        if (thElem) {
-                            thElem.style.width = columnWidth + 'px';
-                            thElem.style.minWidth = '0px';
-                            thElem.style.maxWidth = '100%';
-                        }
-                        if (tfElems.length > 0) {
-                            angular.element(tfElems).css({
-                                width : columnWidth + 'px',
-                                minWidth : '0px',
-                                maxWidth : '100%'
-                            });
-                        }
+                    $scrollable.css({
+                        display: 'block',
+                        minWidth: '100%',
+                        height: height + 'px',
+                        overflowY: 'auto',
+                        position: 'absolute'
                     });
+                    wrap.style.height = height + 'px';
                 });
             }
         }
     }
 })();
-
