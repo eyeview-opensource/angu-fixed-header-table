@@ -116,7 +116,7 @@
                     });
                     $scrollable.css({
                         display: 'block',
-                        width: '100%',
+                        minWidth: '100%',
                         height: height + 'px',
                         overflowY: 'auto',
                         position: 'absolute'
@@ -127,4 +127,3 @@
         }
     }
 })();
-
