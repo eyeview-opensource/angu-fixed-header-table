@@ -56,11 +56,12 @@
                 elem.parentNode.insertBefore(wrap, elem);
                 wrap.appendChild(elem);
                 wrap.style.position = 'relative';
+                wrap.style.overflowX = 'auto';
 
                 scrollable = document.createElement('div');
                 wrap.appendChild(scrollable);
                 scrollable.appendChild(elem);
-                scrollable.style.margin = window.getComputedStyle(elem).margin;
+                //scrollable.style.margin = window.getComputedStyle(elem).margin;
                 $scrollable = angular.element(scrollable);
                 elem.style.margin = '0px';
 
@@ -115,11 +116,12 @@
                     $scrollable.css({
                         display: 'block',
                         height: height + 'px',
-                        overflow: 'auto'
-                    })
+                        overflowY: 'auto',
+                        position: 'absolute'
+                    });
+                    wrap.style.height = height + 'px';
                 });
             }
         }
     }
 })();
-
