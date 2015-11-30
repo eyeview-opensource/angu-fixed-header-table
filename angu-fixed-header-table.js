@@ -58,6 +58,7 @@
                 wrap.style.position = 'relative';
                 wrap.style.xIndex = 1;
                 wrap.style.overflowX = 'auto';
+                wrap.style.overflowY = 'hidden';
 
                 scrollable = document.createElement('div');
                 wrap.appendChild(scrollable);
@@ -117,13 +118,16 @@
                     $scrollable.css({
                         display: 'block',
                         minWidth: '100%',
-                        height: height + 'px',
+                        height: height - (wrap.offsetHeight - wrap.clientHeight) + 'px',
+                        overflowX: 'hidden',
                         overflowY: 'auto',
                         position: 'absolute'
                     });
+                    scrollable.style.paddingRight = (scrollable.offsetWidth - scrollable.clientWidth) + 'px';
                     wrap.style.height = height + 'px';
                 });
             }
         }
     }
 })();
+
