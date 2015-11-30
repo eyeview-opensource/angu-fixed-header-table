@@ -59,6 +59,8 @@
                 wrap.style.xIndex = 1;
                 wrap.style.overflowX = 'auto';
                 wrap.style.overflowY = 'hidden';
+                elem.style.width = 'auto';
+                elem.style.minWidth = '100%';
 
                 scrollable = document.createElement('div');
                 wrap.appendChild(scrollable);
@@ -82,7 +84,8 @@
                         tableLayout: 'fixed',
                         margin: 0,
                         padding: 0,
-                        zIndex: 10
+                        zIndex: 10,
+                        width: 'auto'
                     });
                     cloned.style.visibility = 'hidden';
                 }
@@ -103,17 +106,22 @@
 
                     var shadows = wrap.querySelectorAll('table.shadowed');
                     angular.forEach(elem.querySelectorAll('thead, tfoot'), function (cont, index) {
+                        var tableWidth = 0;
                         angular.forEach(cont.querySelectorAll('tr'), function(row, rowIndex) {
-                           angular.forEach(row.querySelectorAll('td,th'), function(cell, cellIndex) {
-                               var el = shadows[index].querySelector(
+                            var rowWidth = 0;
+                            angular.forEach(row.querySelectorAll('td,th'), function(cell, cellIndex) {
+                                var el = shadows[index].querySelector(
                                     'tr:nth-child(' + (rowIndex+1) + ') ' +
                                     cell.nodeName + ':nth-child(' + (cellIndex+1)  + ')');
 
-                               el.style.width = cell.offsetWidth + 'px';
-                               el.style.minWidth = '0px';
-                               el.style.maxWidth = '100%';
-                           });
+                                el.style.width = cell.offsetWidth + 'px';
+                                el.style.minWidth = '0px';
+                                el.style.maxWidth = '100%';
+                                rowWidth += cell.offsetWidth;
+                            });
+                            tableWidth = Math.max(tableWidth, rowWidth);
                         });
+                        shadows[index].style.width = tableWidth + 'px';
                     });
                     $scrollable.css({
                         display: 'block',
@@ -123,11 +131,14 @@
                         overflowY: 'auto',
                         position: 'absolute'
                     });
-                    scrollable.style.paddingRight = (scrollable.offsetWidth - scrollable.clientWidth) + 'px';
+                    if (wrap.offsetWidth < scrollable.offsetWidth) {
+                        scrollable.style.paddingRight = (scrollable.offsetWidth - scrollable.clientWidth) + 'px';
+                    } else {
+                        scrollable.style.paddingRight = '0px';
+                    }
                     wrap.style.height = height + 'px';
                 });
             }
         }
     }
 })();
-
