@@ -43,7 +43,9 @@
                 });
             }
 
+            $scope.$on('fixedHeader:updateTable', transformTable);
             $scope.$on('ngTable:afterReloadData', transformTable);
+
             // wait for data to load and then transform the table
             $scope.$watch(tableDataLoaded, function(isTableDataLoaded) {
                 if (isTableDataLoaded) {
