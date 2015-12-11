@@ -43,8 +43,12 @@
                 });
             }
 
-            $scope.$on('fixedHeader:updateTable', transformTable);
-            $scope.$on('ngTable:afterReloadData', transformTable);
+            function delayTransformTable(){
+                $timeout(transformTable, 100);
+            }
+
+            $scope.$on('fixedHeader:updateTable', delayTransformTable);
+            $scope.$on('ngTable:afterReloadData', delayTransformTable);
 
             // wait for data to load and then transform the table
             $scope.$watch(tableDataLoaded, function(isTableDataLoaded) {
