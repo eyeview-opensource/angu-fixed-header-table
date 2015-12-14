@@ -44,7 +44,8 @@
             }
 
             function delayTransformTable(){
-                $timeout(transformTable, 100);
+                // give table time enough to render rows, cells and apply ng-filters
+                $timeout(transformTable, 50); // ms
             }
 
             $scope.$on('fixedHeader:updateTable', delayTransformTable);
