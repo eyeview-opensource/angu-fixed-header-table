@@ -107,6 +107,10 @@
             function transformTable() {
                 // reset display styles so column widths are correct when measured below
                 $timeout(function () {
+                    if(!$elem.is(':visible')){
+                        return;
+                    }
+
                     var height = ($attrs.tableHeight === 'auto' || !$attrs.tableHeight) ?
                                         getHeight(wrap) : $attrs.tableHeight;
 
