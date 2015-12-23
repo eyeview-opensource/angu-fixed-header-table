@@ -58,6 +58,21 @@
                 }
             });
 
+            // Clone the header and footer again using the shadowed table as reference
+            function recloneHeaderAndFooter () {
+                if (!wrap || !elem) {
+                    return;
+                }
+                var sourceTableElems = wrap.querySelectorAll('table.shadowed thead, table.shadowed tfoot');
+                var destinationTableElems = elem.querySelectorAll('thead, tfoot');
+                for (var i=0; i < sourceTableElems.length; i++) {
+                    destinationTableElems[i].parentNode.replaceChild(
+                        sourceTableElems[i].cloneNode(true),
+                        destinationTableElems[i]
+                    );
+                }
+            }
+
             $timeout(function(){
                 wrap = document.createElement('div');
                 elem.parentNode.insertBefore(wrap, elem);
@@ -106,6 +121,7 @@
             }
 
             function transformTable() {
+                recloneHeaderAndFooter();
                 // reset display styles so column widths are correct when measured below
                 $timeout(function () {
                     if(!$elem.is(':visible')){
@@ -113,7 +129,7 @@
                     }
 
                     var height = ($attrs.tableHeight === 'auto' || !$attrs.tableHeight) ?
-                                        getHeight(wrap) : $attrs.tableHeight;
+                        getHeight(wrap) : $attrs.tableHeight;
 
                     var shadows = wrap.querySelectorAll('table.shadowed');
                     angular.forEach(elem.querySelectorAll('thead, tfoot'), function (cont, index) {
