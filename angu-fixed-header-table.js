@@ -137,7 +137,7 @@
                     $scrollable.css({
                         display: 'block',
                         minWidth: '100%',
-                        height: height - (wrap.offsetHeight - wrap.clientHeight) + 'px',
+                        height: Math.min(height, elem.offsetHeight) - (wrap.offsetHeight - wrap.clientHeight) + 'px',
                         overflowX: 'hidden',
                         overflowY: 'auto',
                         position: 'absolute'
@@ -147,7 +147,7 @@
                     } else {
                         scrollable.style.paddingRight = '0px';
                     }
-                    wrap.style.height = height + 'px';
+                    wrap.style.height = Math.min(height, elem.offsetHeight) + 'px';
                 });
             }
         }
