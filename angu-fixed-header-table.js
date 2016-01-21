@@ -140,6 +140,9 @@
                                 var el = shadows[index].querySelector(
                                     'tr:nth-child(' + (rowIndex+1) + ') ' +
                                     cell.nodeName + ':nth-child(' + (cellIndex+1)  + ')');
+                                if (!el) {
+                                    return;
+                                }
 
                                 el.style.width = cell.offsetWidth + 'px';
                                 el.style.minWidth = '0px';
@@ -148,7 +151,9 @@
                             });
                             tableWidth = Math.max(tableWidth, rowWidth);
                         });
-                        shadows[index].style.width = tableWidth + 'px';
+                        if (tableWidth > 0) {
+                            shadows[index].style.width = tableWidth + 'px';
+                        }
                     });
                     $scrollable.css({
                         display: 'block',
