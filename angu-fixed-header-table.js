@@ -134,6 +134,25 @@
                 return firstCell && !firstCell.style.width;
             }
 
+            var viewHeight = 0;
+            function updateViewHeight(refresh) {
+                if (!wrap || !elem || !$elem.is(':visible')) {
+                    return;
+                }
+                if (refresh) {
+                    viewHeight = ($attrs.tableHeight === 'auto' || !$attrs.tableHeight) ?
+                        getHeight(wrap) : $attrs.tableHeight;
+                }
+                var height = viewHeight;
+                scrollable.style.height = Math.min(height, elem.offsetHeight) - (wrap.offsetHeight - wrap.clientHeight) + 'px';
+                if (wrap.offsetWidth < scrollable.offsetWidth) {
+                    scrollable.style.paddingRight = (scrollable.offsetWidth - scrollable.clientWidth) + 'px';
+                } else {
+                    scrollable.style.paddingRight = '0px';
+                }
+                wrap.style.height = Math.min(height, elem.offsetHeight) + 'px';
+            }
+
             function transformTable() {
                 recloneHeaderAndFooter();
                 // reset display styles so column widths are correct when measured below
@@ -141,9 +160,6 @@
                     if(!$elem.is(':visible')){
                         return;
                     }
-
-                    var height = ($attrs.tableHeight === 'auto' || !$attrs.tableHeight) ?
-                        getHeight(wrap) : $attrs.tableHeight;
 
                     var shadows = wrap.querySelectorAll('table.shadowed');
                     angular.forEach(elem.querySelectorAll('thead, tfoot'), function (cont, index) {
@@ -172,19 +188,14 @@
                     $scrollable.css({
                         display: 'block',
                         minWidth: '100%',
-                        height: Math.min(height, elem.offsetHeight) - (wrap.offsetHeight - wrap.clientHeight) + 'px',
                         overflowX: 'hidden',
                         overflowY: 'auto',
                         position: 'absolute'
                     });
-                    if (wrap.offsetWidth < scrollable.offsetWidth) {
-                        scrollable.style.paddingRight = (scrollable.offsetWidth - scrollable.clientWidth) + 'px';
-                    } else {
-                        scrollable.style.paddingRight = '0px';
-                    }
-                    wrap.style.height = Math.min(height, elem.offsetHeight) + 'px';
+                    updateViewHeight(true);
                 });
             }
         }
     }
 })();
+
