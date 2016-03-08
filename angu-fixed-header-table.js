@@ -10,6 +10,21 @@
 
     fixedHeader.$inject = ['$timeout', '$window'];
 
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function() {
+            var context = this, args = arguments;
+            var later = function() {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
+
     function fixedHeader($timeout, $window) {
         return {
             restrict: 'A',
@@ -19,6 +34,10 @@
         function link($scope, $elem, $attrs) {
             var elem = $elem[0];
             var wrap, $scrollable, scrollable;
+
+            // for performance reasons, ignore events caused by rapidly repeating events
+            // like animations
+            var delayTransformTable = debounce(transformTable, 50);
 
             function getHeight(e) {
                 e.style.display = 'none';
@@ -36,16 +55,11 @@
             }
 
             if ($attrs.tableHeight === 'auto' || !$attrs.tableHeight) {
-                $($window).on('resize', transformTable);
+                $($window).on('resize', delayTransformTable);
 
                 $scope.$on('$destroy', function () {
-                    $($window).off('resize', transformTable);
+                    $($window).off('resize', delayTransformTable);
                 });
-            }
-
-            function delayTransformTable(){
-                // give table time enough to render rows, cells and apply ng-filters
-                $timeout(transformTable, 50); // ms
             }
 
             $scope.$on('fixedHeader:updateTable', delayTransformTable);
