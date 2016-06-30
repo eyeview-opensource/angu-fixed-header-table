@@ -32,8 +32,19 @@
         };
 
         function link($scope, $elem, $attrs) {
+            var ATTR_CHECK_WIDTH = 'fixedHeaderCheckWidth';
+
             var elem = $elem[0];
             var wrap, $scrollable, scrollable;
+
+            //---
+
+            var checkWindowWidthFlag = false;
+            if(angular.isDefined($attrs[ATTR_CHECK_WIDTH])){
+                // if `fixed-header-check-width` is present
+                // this makes the code flow check the windows width on resize
+                checkWindowWidthFlag = true;
+            }
 
             // for performance reasons, ignore events caused by rapidly repeating events
             // like animations
@@ -56,7 +67,12 @@
 
             var defineColumnWidthFlag = false;
             function checkWindowWidth(){
-                defineColumnWidthFlag = (window.innerWidth <= 1300); //px
+                if(checkWindowWidthFlag){
+                    defineColumnWidthFlag = (window.innerWidth <= 1300); //px
+                } else {
+                    defineColumnWidthFlag = true;
+                }
+
             }
             checkWindowWidth();
 
@@ -93,10 +109,11 @@
             });
 
             // Clone the header and footer again using the shadowed table as reference
-            function recloneHeaderAndFooter () {
+            function recloneHeaderAndFooter() {
                 if (!wrap || !elem) {
                     return;
                 }
+
                 var sourceTableElems = wrap.querySelectorAll('table.shadowed thead, table.shadowed tfoot');
                 var destinationTableElems = elem.querySelectorAll('thead, tfoot');
                 for (var i=0; i < sourceTableElems.length; i++) {
@@ -195,7 +212,6 @@
                                     return;
                                 }
 
-                                // only set width if windows width is under 1300px
                                 if(defineColumnWidthFlag){
                                     el.style.width = cell.offsetWidth + 'px';
                                 }
@@ -207,9 +223,10 @@
                             tableWidth = Math.max(tableWidth, rowWidth);
                         });
                         if (tableWidth > 0) {
-                            shadows[index].style.width = tableWidth + 'px';
+                            shadows[index].style.width = (tableWidth+1) + 'px';
                         }
-                    });
+                    }, 50);
+
                     $scrollable.css({
                         display: 'block',
                         minWidth: '100%',
