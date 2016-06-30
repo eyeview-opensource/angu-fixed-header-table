@@ -54,11 +54,26 @@
                 return height;
             }
 
+            var defineColumnWidthFlag = false;
+            var resizeTimeout;
+            function resizeHandler(){
+                defineColumnWidthFlag = (window.innerWidth <= 1500); //px
+
+                if(resizeTimeout){
+                    $timeout.cancel(resizeTimeout);
+                    resizeTimeout = null;
+                }
+                resizeTimeout = $timeout(function(){
+                    resizeTimeout = null;
+                    transformTable();
+                }, 100);
+            }
+
             if ($attrs.tableHeight === 'auto' || !$attrs.tableHeight) {
-                $($window).on('resize', delayTransformTable);
+                $($window).on('resize', resizeHandler);
 
                 $scope.$on('$destroy', function () {
-                    $($window).off('resize', delayTransformTable);
+                    $($window).off('resize', resizeHandler);
                 });
             }
 
@@ -155,7 +170,8 @@
 
             function transformTable() {
                 recloneHeaderAndFooter();
-                // reset display styles so column widths are correct when measured below
+
+                // wrap in $timeout to give table a chance to finish rendering
                 $timeout(function () {
                     if(!$elem.is(':visible')){
                         return;
@@ -174,7 +190,11 @@
                                     return;
                                 }
 
-                                el.style.width = cell.offsetWidth + 'px';
+                                // only set width if windows width is under 1500px
+                                if(defineColumnWidthFlag){
+                                    el.style.width = cell.offsetWidth + 'px';
+                                }
+
                                 el.style.minWidth = '0px';
                                 el.style.maxWidth = '100%';
                                 rowWidth += cell.offsetWidth;
@@ -198,4 +218,3 @@
         }
     }
 })();
-
