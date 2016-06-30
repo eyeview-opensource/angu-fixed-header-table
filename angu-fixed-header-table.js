@@ -57,7 +57,7 @@
             var defineColumnWidthFlag = false;
             var resizeTimeout;
             function resizeHandler(){
-                defineColumnWidthFlag = (window.innerWidth <= 1500); //px
+                defineColumnWidthFlag = (window.innerWidth <= 1300); //px
 
                 if(resizeTimeout){
                     $timeout.cancel(resizeTimeout);
@@ -190,7 +190,7 @@
                                     return;
                                 }
 
-                                // only set width if windows width is under 1500px
+                                // only set width if windows width is under 1300px
                                 if(defineColumnWidthFlag){
                                     el.style.width = cell.offsetWidth + 'px';
                                 }
