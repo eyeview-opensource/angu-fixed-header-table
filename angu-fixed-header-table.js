@@ -55,9 +55,14 @@
             }
 
             var defineColumnWidthFlag = false;
+            function checkWindowWidth(){
+                defineColumnWidthFlag = (window.innerWidth <= 1300); //px
+            }
+            checkWindowWidth();
+
             var resizeTimeout;
             function resizeHandler(){
-                defineColumnWidthFlag = (window.innerWidth <= 1300); //px
+                checkWindowWidth();
 
                 if(resizeTimeout){
                     $timeout.cancel(resizeTimeout);
