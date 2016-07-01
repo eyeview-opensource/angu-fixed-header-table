@@ -23,7 +23,11 @@
             timeout = setTimeout(later, wait);
             if (callNow) func.apply(context, args);
         };
-    };
+    }
+
+    function isInteger(strNum){
+        return /^\+?\d+$/.test(strNum);
+    }
 
     function fixedHeader($timeout, $window) {
         return {
@@ -33,6 +37,7 @@
 
         function link($scope, $elem, $attrs) {
             var ATTR_CHECK_WIDTH = 'fixedHeaderCheckWidth';
+            var checkMinWidthValue = 1300;
 
             var elem = $elem[0];
             var wrap, $scrollable, scrollable;
@@ -44,6 +49,14 @@
                 // if `fixed-header-check-width` is present
                 // this makes the code flow check the windows width on resize
                 checkWindowWidthFlag = true;
+
+                var value = $attrs[ATTR_CHECK_WIDTH];
+                if(isInteger(value)){
+                    value = parseInt(value);
+                    // use defined value if greater than 1000px, else use default value (1300px)
+                    checkMinWidthValue = (value > 1000) ? value : checkMinWidthValue;
+                }
+                value = null;
             }
 
             // for performance reasons, ignore events caused by rapidly repeating events
@@ -68,7 +81,7 @@
             var defineColumnWidthFlag = false;
             function checkWindowWidth(){
                 if(checkWindowWidthFlag){
-                    defineColumnWidthFlag = (window.innerWidth <= 1300); //px
+                    defineColumnWidthFlag = (window.innerWidth <= checkMinWidthValue); //px
                 } else {
                     defineColumnWidthFlag = true;
                 }
