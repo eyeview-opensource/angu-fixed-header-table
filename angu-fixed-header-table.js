@@ -1,41 +1,67 @@
 ﻿/**
+ * This code was initially based on:
+ *
  * AngularJS fixed header scrollable table directive
  * @author Jason Watmore <jason@pointblankdevelopment.com.au> (http://jasonwatmore.com)
- * @version 1.2.0
+ * @version 1.2.0 (https://github.com/cornflourblue/angu-fixed-header-table/commit/41f8dfd1f35a242f2931cbf1885c82cfaace671b)
  */
 (function () {
-    angular
-        .module('anguFixedHeaderTable', [])
-        .directive('fixedHeader', fixedHeader);
 
-    fixedHeader.$inject = ['$timeout', '$window'];
+    var Utils = (function(){
 
-    function debounce(func, wait, immediate) {
-        var timeout;
-        return function() {
-            var context = this, args = arguments;
-            var later = function() {
-                timeout = null;
-                if (!immediate) func.apply(context, args);
+        function debounce(func, wait, immediate) {
+            var timeout;
+            return function() {
+                var context = this, args = arguments;
+                var later = function() {
+                    timeout = null;
+                    if (!immediate) func.apply(context, args);
+                };
+                var callNow = immediate && !timeout;
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+                if (callNow) func.apply(context, args);
             };
-            var callNow = immediate && !timeout;
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-            if (callNow) func.apply(context, args);
-        };
-    }
+        }
 
-    function isInteger(strNum){
-        return /^\+?\d+$/.test(strNum);
-    }
+        function isInteger(strNum){
+            return /^\+?\d+$/.test(strNum);
+        }
+
+        function getHeight(e) {
+            e.style.display = 'none';
+            var p = angular.element(e.parentElement);
+            var height = window.innerHeight - p.offset().top - p.height();
+            var i = p[0];
+            while (i && i != document.body) {
+                try {
+                    height -= parseFloat(
+                        window
+                            .getComputedStyle(i)
+                            .paddingBottom
+                            .replace(/^(-?(?:\d)?(?:.\d+)?)[A-Za-z%]*$/, '$1')
+                    );
+                } catch (x) {}
+                i = i.parentElement;
+            }
+            e.style.display = '';
+            return height;
+        }
+
+        //--- API
+        return {
+            debounce : debounce,
+            isInteger : isInteger,
+            getHeight : getHeight
+        };
+    })();
+
+    //------------------------------------------------------------------------//
+    // @begin: directive code
 
     function fixedHeader($timeout, $window) {
-        return {
-            restrict: 'A',
-            link: link
-        };
 
-        function link($scope, $elem, $attrs) {
+        function linkFn($scope, $elem, $attrs) {
             var ATTR_CHECK_WIDTH = 'fixedHeaderCheckWidth';
             var checkMinWidthValue = 1300;
 
@@ -51,7 +77,7 @@
                 checkWindowWidthFlag = true;
 
                 var value = $attrs[ATTR_CHECK_WIDTH];
-                if(isInteger(value)){
+                if(Utils.isInteger(value)){
                     value = parseInt(value);
                     // use defined value if greater than 1000px, else use default value (1300px)
                     checkMinWidthValue = (value > 1000) ? value : checkMinWidthValue;
@@ -61,22 +87,7 @@
 
             // for performance reasons, ignore events caused by rapidly repeating events
             // like animations
-            var delayTransformTable = debounce(transformTable, 50);
-
-            function getHeight(e) {
-                e.style.display = 'none';
-                var p = angular.element(e.parentElement);
-                var height = window.innerHeight - p.offset().top - p.height();
-                var i = p[0];
-                while (i && i != document.body) {
-                    try {
-                        height -= parseFloat(window.getComputedStyle(i).paddingBottom.replace(/^(-?(?:\d)?(?:.\d+)?)[A-Za-z%]*$/, '$1'));
-                    } catch (x) {}
-                    i = i.parentElement;
-                }
-                e.style.display = '';
-                return height;
-            }
+            var delayTransformTable = Utils.debounce(transformTable, 50);
 
             var defineColumnWidthFlag = false;
             function checkWindowWidth(){
@@ -191,7 +202,7 @@
                 }
                 if (refresh) {
                     viewHeight = ($attrs.tableHeight === 'auto' || !$attrs.tableHeight) ?
-                        getHeight(wrap) : $attrs.tableHeight;
+                        Utils.getHeight(wrap) : $attrs.tableHeight;
                 }
                 var height = viewHeight;
                 scrollable.style.height = Math.min(height, elem.offsetHeight) - (wrap.offsetHeight - wrap.clientHeight) + 'px';
@@ -251,5 +262,20 @@
                 });
             }
         }
+
+        // directive config
+        return {
+            restrict: 'A',
+            link: linkFn
+        };
     }
+
+    fixedHeader.$inject = ['$timeout', '$window'];
+
+    // @end: directive code
+    //------------------------------------------------------------------------//
+
+    angular
+        .module('anguFixedHeaderTable', [])
+        .directive('fixedHeader', fixedHeader);
 })();
