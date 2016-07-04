@@ -9,6 +9,11 @@
 
     var Utils = (function(){
 
+        var REGEXP = {
+            IS_INTEGER : /^\+?\d+$/,
+            PADDING_BOTTOM_REPLACE : /^(-?(?:\d)?(?:.\d+)?)[A-Za-z%]*$/
+        };
+
         function debounce(func, wait, immediate){
             var timeout;
             return function() {
@@ -25,7 +30,7 @@
         }
 
         function isInteger(strNum){
-            return /^\+?\d+$/.test(strNum);
+            return REGEXP.IS_INTEGER.test(strNum);
         }
 
         function getHeight(e){
@@ -39,7 +44,7 @@
                         window
                             .getComputedStyle(i)
                             .paddingBottom
-                            .replace(/^(-?(?:\d)?(?:.\d+)?)[A-Za-z%]*$/, '$1')
+                            .replace(REGEXP.PADDING_BOTTOM_REPLACE, '$1')
                     );
                 } catch (x) {}
                 i = i.parentElement;
