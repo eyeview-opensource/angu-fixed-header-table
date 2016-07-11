@@ -65,18 +65,29 @@
     // @begin: directive code
 
     function fixedHeader($timeout, $window){
+        var attr_prefix = 'fixedHeader';
+        var ATTRS = {
+            CHECK_WIDTH : attr_prefix + 'CheckWidth', // fixed-header-check-width
+            SCROLL : {
+                ON_TOP : attr_prefix + 'ScrollOnTop', // fixed-header-scroll-on-top
+                ON_BOTTOM : attr_prefix + 'ScrollOnBottom' // fixed-header-scroll-on-bottom
+            }
+        };
 
         function postLink($scope, $elem, $attrs){
-            var ATTR_CHECK_WIDTH = 'fixedHeaderCheckWidth';
             var checkMinWidthValue = 1300;
 
             var elem = $elem[0];
             var wrap, $scrollable, scrollable;
+            var scrollListener;
 
             var checkWindowWidthFlag = false;
             var defineColumnWidthFlag = false;
             var resizeTimeout;
             var viewHeight = 0;
+
+            var scrollOnTopAction = null;
+            var scrollOnBottomAction = null;
 
             //---
 
@@ -200,21 +211,41 @@
                 }, 100);
             }
 
+            function verticalScrollHandler(){
+                var delta = (
+                    scrollable.scrollHeight - scrollable.scrollTop - scrollable.clientHeight
+                );
+                if((scrollable.scrollTop <= 0) && scrollOnTopAction){
+                    $scope.$apply(scrollOnTopAction);
+                } else if((delta <= 0) && scrollOnBottomAction){
+                    $scope.$apply(scrollOnBottomAction);
+                }
+                delta = null;
+            }
+
             //---
 
             function checkAttrs(){
-                if(angular.isDefined($attrs[ATTR_CHECK_WIDTH])){
+                if(angular.isDefined($attrs[ATTRS.CHECK_WIDTH])){
                     // if `fixed-header-check-width` is present
                     // this makes the code flow check the windows width on resize
                     checkWindowWidthFlag = true;
 
-                    var value = $attrs[ATTR_CHECK_WIDTH];
+                    var value = $attrs[ATTRS.CHECK_WIDTH];
                     if(Utils.isInteger(value)){
                         value = parseInt(value);
                         // use defined value if greater than 1000px, else use default value (1300px)
                         checkMinWidthValue = (value > 1000) ? value : checkMinWidthValue;
                     }
                     value = null;
+                }
+
+                if(angular.isDefined($attrs[ATTRS.SCROLL.ON_TOP])){
+                    scrollOnTopAction = $attrs[ATTRS.SCROLL.ON_TOP];
+                }
+
+                if(angular.isDefined($attrs[ATTRS.SCROLL.ON_BOTTOM])){
+                    scrollOnBottomAction = $attrs[ATTRS.SCROLL.ON_BOTTOM]
                 }
             }
 
@@ -257,6 +288,10 @@
                         });
                         cloned.style.visibility = 'hidden';
                     }
+
+                    if(scrollOnTopAction || scrollOnBottomAction){
+                        scrollListener = $scrollable.on('scroll', verticalScrollHandler);
+                    }
                 });
             }
 
@@ -290,10 +325,14 @@
                     tableDataLoadedWatch();
                     tableDataLoadedWatch = null;
 
+                    if(scrollListener){
+                        scrollListener();
+                        scrollListener = null;
+                    }
+
                     //---
 
                     // cleanup variables
-                    ATTR_CHECK_WIDTH = null;
                     checkMinWidthValue = null;
 
                     elem = null;
@@ -306,6 +345,9 @@
                     resizeTimeout = null;
                     viewHeight = null;
                     delayTransformTable = null;
+
+                    scrollOnTopAction = null;
+                    scrollOnBottomAction = null;
                 });
             })();
         }
@@ -340,6 +382,12 @@
      *     fixed-header-check-width or fixed-header-check-width="1200"
      *       if present define the code flow to check window width and that
      *       will change the code flow to update the table header UI
+     *
+     *     fixed-header-scroll-on-top="ctrl.onScrollTopAction()"
+     *       define one action handler to scroll top event
+     *
+     *     fixed-header-scroll-on-bottom="ctrl.onScrollBottomAction()"
+     *       define one action handler to scroll bottom event
      *   -->
      * >
      *   <!-- table content -->
