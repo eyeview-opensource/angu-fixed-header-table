@@ -79,7 +79,6 @@
 
             var elem = $elem[0];
             var wrap, $scrollable, scrollable;
-            var scrollListener;
 
             var checkWindowWidthFlag = false;
             var defineColumnWidthFlag = false;
@@ -290,7 +289,7 @@
                     }
 
                     if(scrollOnTopAction || scrollOnBottomAction){
-                        scrollListener = $scrollable.on('scroll', verticalScrollHandler);
+                        $scrollable.on('scroll', verticalScrollHandler);
                     }
                 });
             }
@@ -325,9 +324,8 @@
                     tableDataLoadedWatch();
                     tableDataLoadedWatch = null;
 
-                    if(scrollListener){
-                        scrollListener();
-                        scrollListener = null;
+                    if(scrollOnTopAction || scrollOnBottomAction){
+                        $scrollable.off('scroll', verticalScrollHandler);
                     }
 
                     //---
