@@ -85,6 +85,8 @@
             var resizeTimeout;
             var viewHeight = 0;
 
+            var verticalScrollTopInitialPositon;
+            var verticalScrollTimeout;
             var scrollOnTopAction = null;
             var scrollOnBottomAction = null;
 
@@ -210,18 +212,64 @@
                 }, 100);
             }
 
-            function verticalScrollHandler(){
+            //---
+            // @begin: scroll
+
+            function disableVScrollListener(){
+                $scrollable.off('scroll', verticalScrollHandler);
+            }
+
+            function enableVScrollListener(){
+                $timeout(function(){
+                    $scrollable.on('scroll', verticalScrollHandler);
+                },10);
+            }
+
+            // TODO: need review
+            function redefineScrollTopPosition(){
+                $timeout(function(){
+                    scrollable.scrollTop = verticalScrollTopInitialPositon;
+                    verticalScrollTopInitialPositon = null;
+                    enableVScrollListener();
+                },10);
+            }
+
+            function doVerticalScrollCheck(){
+                var offset = 0;
                 var delta = (
                     scrollable.scrollHeight - scrollable.scrollTop - scrollable.clientHeight
                 );
-                if((scrollable.scrollTop <= 0) && scrollOnTopAction){
+
+                // TODO: need review - should define one higher offset?
+                if((scrollable.scrollTop <= offset) && scrollOnTopAction){
+                    disableVScrollListener();
                     $scope.$apply(scrollOnTopAction);
-                } else if((delta <= 0) && scrollOnBottomAction){
+                    redefineScrollTopPosition();
+                } else if((delta <= offset) && scrollOnBottomAction){
+                    disableVScrollListener();
                     $scope.$apply(scrollOnBottomAction);
+                    redefineScrollTopPosition();
                 }
+
                 delta = null;
+                offset = null;
             }
 
+            function verticalScrollHandler(){
+                if(verticalScrollTimeout){
+                    $timeout.cancel(verticalScrollTimeout);
+                    verticalScrollTimeout = null;
+                } else {
+                    verticalScrollTopInitialPositon = scrollable.scrollTop;
+                }
+
+                verticalScrollTimeout = $timeout(function(){
+                    verticalScrollTimeout = null;
+                    doVerticalScrollCheck();
+                }, 20);
+            }
+
+            // @end: scroll
             //---
 
             function checkAttrs(){
@@ -344,6 +392,8 @@
                     viewHeight = null;
                     delayTransformTable = null;
 
+                    verticalScrollTopInitialPositon = null;
+                    verticalScrollTimeout = null;
                     scrollOnTopAction = null;
                     scrollOnBottomAction = null;
                 });
