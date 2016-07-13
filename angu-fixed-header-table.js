@@ -71,7 +71,8 @@
             CHECK_WIDTH : attr_prefix + 'CheckWidth', // fixed-header-check-width
             SCROLL : {
                 ON_TOP : attr_prefix + 'ScrollOnTop', // fixed-header-scroll-on-top
-                ON_BOTTOM : attr_prefix + 'ScrollOnBottom' // fixed-header-scroll-on-bottom
+                ON_BOTTOM : attr_prefix + 'ScrollOnBottom', // fixed-header-scroll-on-bottom
+                REDEFINE_POSITION : attr_prefix + 'ScrollRedefinePosition' // fixed-header-scroll-redefine-position
             },
             ROW_CLASSNAME : attr_prefix + 'RowClassname' // fixed-header-row-classname
         };
@@ -92,6 +93,7 @@
             var resizeTimeout;
             var viewHeight = 0;
 
+            var shouldRedefineScrollPosition = false;
             var verticalScrollTimeout;
             var scrollOnTopAction = null;
             var scrollOnBottomAction = null;
@@ -228,13 +230,13 @@
             function enableVScrollListener(){
                 $timeout(function(){
                     $scrollable.on('scroll', verticalScrollHandler);
-                },10);
+                },100);
             }
 
             function getElementsSelector(){
                 return (
                     'table tbody tr' + (
-                        rowClassname ? '.'+rowClassname : ''
+                        rowClassname ? ('.' + rowClassname) : ''
                     )
                 );
             }
@@ -295,11 +297,7 @@
                     $scrollable.css({position : ''});
 
                     switch(position){
-
-                        // TODO: need review
                         case SCROLL_POSITION.TOP:
-                            console.log(el.index()); // TODO: remove
-
                             var tableHeader = wrap.querySelectorAll('table.shadowed thead');
                             var tableHeaderHeight = angular.element(tableHeader).height();
                             var rowHeight = el.height();
@@ -327,26 +325,38 @@
 
                     enableVScrollListener();
                     el = null;
-                },10);
+                });
             }
 
             function doVerticalScrollCheck(){
                 var el;
-                var offset = 0;
+                var offset = 1;
                 var delta = (
                     scrollable.scrollHeight - scrollable.scrollTop - scrollable.clientHeight
                 );
 
                 if((scrollable.scrollTop <= offset) && scrollOnTopAction){
                     disableVScrollListener();
-                    el = getElementOn(SCROLL_POSITION.TOP);
+                    if(shouldRedefineScrollPosition) {
+                        el = getElementOn(SCROLL_POSITION.TOP);
+                    }
                     $scope.$apply(scrollOnTopAction);
-                    redefineScrollPosition(SCROLL_POSITION.TOP, el);
+                    if(shouldRedefineScrollPosition) {
+                        redefineScrollPosition(SCROLL_POSITION.TOP, el);
+                    } else {
+                        enableVScrollListener();
+                    }
                 } else if((delta <= offset) && scrollOnBottomAction){
                     disableVScrollListener();
-                    el = getElementOn(SCROLL_POSITION.BOTTOM);
+                    if(shouldRedefineScrollPosition) {
+                        el = getElementOn(SCROLL_POSITION.BOTTOM);
+                    }
                     $scope.$apply(scrollOnBottomAction);
-                    redefineScrollPosition(SCROLL_POSITION.BOTTOM, el);
+                    if(shouldRedefineScrollPosition) {
+                        redefineScrollPosition(SCROLL_POSITION.BOTTOM, el);
+                    } else {
+                        enableVScrollListener();
+                    }
                 }
 
                 delta = null;
@@ -396,6 +406,11 @@
                     scrollOnBottomAction = $attrs[ATTRS.SCROLL.ON_BOTTOM];
                 }
 
+                // fixed-header-scroll-redefine-position
+                if(ATTRS.SCROLL.REDEFINE_POSITION in $attrs){
+                    shouldRedefineScrollPosition = true;
+                }
+
                 // fixed-header-row-classname
                 if(angular.isDefined($attrs[ATTRS.ROW_CLASSNAME])){
                     rowClassname = $attrs[ATTRS.ROW_CLASSNAME];
@@ -415,6 +430,7 @@
                     elem.style.minWidth = '100%';
 
                     scrollable = document.createElement('div');
+                    scrollable.className = (scrollable.className||'') + ' fixed-header-scrollable';
                     wrap.appendChild(scrollable);
                     scrollable.appendChild(elem);
                     //scrollable.style.margin = window.getComputedStyle(elem).margin;
@@ -500,6 +516,7 @@
 
                     delayTransformTable = null;
 
+                    shouldRedefineScrollPosition = null;
                     verticalScrollTimeout = null;
                     scrollOnTopAction = null;
                     scrollOnBottomAction = null;
@@ -543,6 +560,12 @@
      *
      *     fixed-header-scroll-on-bottom="ctrl.onScrollBottomAction()"
      *       define one action handler to scroll bottom event
+     *
+     *     fixed-header-scroll-redefine-position
+     *       if present, redefine the scroll position after call the scroll action callback
+     *
+     *     fixed-header-row-classname="rowClassName"
+     *       define the class used on tbody TRs
      *   -->
      * >
      *   <!-- table content -->
