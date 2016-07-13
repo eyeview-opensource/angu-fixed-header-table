@@ -29,6 +29,7 @@
             };
         }
 
+
         function isInteger(strNum){
             return REGEXP.IS_INTEGER.test(strNum);
         }
@@ -71,11 +72,17 @@
             SCROLL : {
                 ON_TOP : attr_prefix + 'ScrollOnTop', // fixed-header-scroll-on-top
                 ON_BOTTOM : attr_prefix + 'ScrollOnBottom' // fixed-header-scroll-on-bottom
-            }
+            },
+            ROW_CLASSNAME : attr_prefix + 'RowClassname' // fixed-header-row-classname
+        };
+        var SCROLL_POSITION = {
+            TOP : 'top',
+            BOTTOM : 'bottom'
         };
 
         function postLink($scope, $elem, $attrs){
             var checkMinWidthValue = 1300;
+            var rowClassname = '';
 
             var elem = $elem[0];
             var wrap, $scrollable, scrollable;
@@ -85,7 +92,6 @@
             var resizeTimeout;
             var viewHeight = 0;
 
-            var verticalScrollTopInitialPositon;
             var verticalScrollTimeout;
             var scrollOnTopAction = null;
             var scrollOnBottomAction = null;
@@ -225,34 +231,127 @@
                 },10);
             }
 
-            // TODO: need review
-            function redefineScrollTopPosition(){
+            function getElementsSelector(){
+                return (
+                    'table tbody tr' + (
+                        rowClassname ? '.'+rowClassname : ''
+                    )
+                );
+            }
+
+            function getElementOn(position){
+                var lines = elem.querySelectorAll(getElementsSelector());
+                var el;
+
+                switch(position){
+                    case SCROLL_POSITION.TOP:
+                        el = lines[0];
+                        break;
+                    case SCROLL_POSITION.BOTTOM:
+                        el = lines[(lines.length-1)];
+                        break;
+                }
+
+                lines = null;
+                selector = null;
+
+                return el.cloneNode(true);
+            }
+
+            function findElementOn(position, findEl){
+                var lines = elem.querySelectorAll(getElementsSelector());
+                var el = null;
+
+                // transform NodeList into js array
+                lines = Array.prototype.slice.call(lines);
+                if(position === SCROLL_POSITION.BOTTOM){
+                    lines.reverse();
+                }
+                lines = lines.filter(function(itemEl){
+                    return (itemEl.innerHTML === findEl.innerHTML);
+                });
+                if(lines.length > 0){
+                    el = lines[0];
+                }
+                lines = null;
+                return el;
+            }
+
+            function redefineScrollPosition(position, el){
                 $timeout(function(){
-                    scrollable.scrollTop = verticalScrollTopInitialPositon;
-                    verticalScrollTopInitialPositon = null;
+                    el = findElementOn(position, el);
+                    if(!el){
+                        enableVScrollListener();
+                        return;
+                    }
+
+                    el = angular.element(el);
+
+                    // make sure the scroll content is relative, to get accurate offset
+                    $scrollable.css({position : 'relative'});
+                    var currentScroll = $scrollable.scrollTop();
+                    var offset = el.position().top + currentScroll;
+                    var height = $scrollable.height();
+                    $scrollable.css({position : ''});
+
+                    switch(position){
+
+                        // TODO: need review
+                        case SCROLL_POSITION.TOP:
+                            console.log(el.index()); // TODO: remove
+
+                            var tableHeader = wrap.querySelectorAll('table.shadowed thead');
+                            var tableHeaderHeight = angular.element(tableHeader).height();
+                            var rowHeight = el.height();
+                            var newTopPosition = 0;
+                            if(offset > rowHeight){
+                                newTopPosition = (
+                                    offset - tableHeaderHeight
+                                );
+                            }
+                            $scrollable.scrollTop(newTopPosition);
+                            newTopPosition = null;
+                            rowHeight = null;
+                            tableHeaderHeight = null;
+                            tableHeader = null;
+                            break;
+                        case SCROLL_POSITION.BOTTOM:
+                            $scrollable.scrollTop(
+                                Math.max(
+                                    0,
+                                    (offset + el.height()) - height
+                                )
+                            );
+                            break;
+                    }
+
                     enableVScrollListener();
+                    el = null;
                 },10);
             }
 
             function doVerticalScrollCheck(){
+                var el;
                 var offset = 0;
                 var delta = (
                     scrollable.scrollHeight - scrollable.scrollTop - scrollable.clientHeight
                 );
 
-                // TODO: need review - should define one higher offset?
                 if((scrollable.scrollTop <= offset) && scrollOnTopAction){
                     disableVScrollListener();
+                    el = getElementOn(SCROLL_POSITION.TOP);
                     $scope.$apply(scrollOnTopAction);
-                    redefineScrollTopPosition();
+                    redefineScrollPosition(SCROLL_POSITION.TOP, el);
                 } else if((delta <= offset) && scrollOnBottomAction){
                     disableVScrollListener();
+                    el = getElementOn(SCROLL_POSITION.BOTTOM);
                     $scope.$apply(scrollOnBottomAction);
-                    redefineScrollTopPosition();
+                    redefineScrollPosition(SCROLL_POSITION.BOTTOM, el);
                 }
 
                 delta = null;
                 offset = null;
+                el = null;
             }
 
             function verticalScrollHandler(){
@@ -287,12 +386,19 @@
                     value = null;
                 }
 
+                // fixed-header-scroll-on-top
                 if(angular.isDefined($attrs[ATTRS.SCROLL.ON_TOP])){
                     scrollOnTopAction = $attrs[ATTRS.SCROLL.ON_TOP];
                 }
 
+                // fixed-header-scroll-on-bottom
                 if(angular.isDefined($attrs[ATTRS.SCROLL.ON_BOTTOM])){
-                    scrollOnBottomAction = $attrs[ATTRS.SCROLL.ON_BOTTOM]
+                    scrollOnBottomAction = $attrs[ATTRS.SCROLL.ON_BOTTOM];
+                }
+
+                // fixed-header-row-classname
+                if(angular.isDefined($attrs[ATTRS.ROW_CLASSNAME])){
+                    rowClassname = $attrs[ATTRS.ROW_CLASSNAME];
                 }
             }
 
@@ -380,6 +486,7 @@
 
                     // cleanup variables
                     checkMinWidthValue = null;
+                    rowClassname = null;
 
                     elem = null;
                     wrap = null;
@@ -390,9 +497,9 @@
                     defineColumnWidthFlag = null;
                     resizeTimeout = null;
                     viewHeight = null;
+
                     delayTransformTable = null;
 
-                    verticalScrollTopInitialPositon = null;
                     verticalScrollTimeout = null;
                     scrollOnTopAction = null;
                     scrollOnBottomAction = null;
