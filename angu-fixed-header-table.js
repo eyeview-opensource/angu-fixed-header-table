@@ -307,19 +307,18 @@
                                     offset - tableHeaderHeight
                                 );
                             }
-                            $scrollable.scrollTop(newTopPosition);
+                            // $scrollable.scrollTop(newTopPosition);
+                            $scrollable.animate({scrollTop:newTopPosition}, '800', 'swing');
                             newTopPosition = null;
                             rowHeight = null;
                             tableHeaderHeight = null;
                             tableHeader = null;
                             break;
                         case SCROLL_POSITION.BOTTOM:
-                            $scrollable.scrollTop(
-                                Math.max(
-                                    0,
-                                    (offset + el.height()) - height
-                                )
-                            );
+                            var newTopPosition = ((offset + el.height()) - height);
+                            // $scrollable.scrollTop(newTopPosition);
+                            $scrollable.animate({scrollTop:newTopPosition}, '800', 'swing');
+                            newTopPosition = null;
                             break;
                     }
 
@@ -328,9 +327,18 @@
                 });
             }
 
+            // TODO: remove
+            function logScrollInfo(){
+                console.log(
+                    'scrollable > scrollTop : ', scrollable.scrollTop,
+                    ' > scrollHeight : ', scrollable.scrollHeight,
+                    ' > clientHeight : ', scrollable.clientHeight
+                );
+            }
+
             function doVerticalScrollCheck(){
                 var el;
-                var offset = 1;
+                var offset = 0;
                 var delta = (
                     scrollable.scrollHeight - scrollable.scrollTop - scrollable.clientHeight
                 );
@@ -340,23 +348,27 @@
                     if(shouldRedefineScrollPosition) {
                         el = getElementOn(SCROLL_POSITION.TOP);
                     }
+                    logScrollInfo(); // TODO: remove
                     $scope.$apply(scrollOnTopAction);
                     if(shouldRedefineScrollPosition) {
                         redefineScrollPosition(SCROLL_POSITION.TOP, el);
                     } else {
                         enableVScrollListener();
                     }
+                    logScrollInfo(); // TODO: remove
                 } else if((delta <= offset) && scrollOnBottomAction){
                     disableVScrollListener();
                     if(shouldRedefineScrollPosition) {
                         el = getElementOn(SCROLL_POSITION.BOTTOM);
                     }
+                    logScrollInfo(); // TODO: remove
                     $scope.$apply(scrollOnBottomAction);
                     if(shouldRedefineScrollPosition) {
                         redefineScrollPosition(SCROLL_POSITION.BOTTOM, el);
                     } else {
                         enableVScrollListener();
                     }
+                    logScrollInfo(); // TODO: remove
                 }
 
                 delta = null;
