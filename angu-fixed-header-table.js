@@ -93,6 +93,8 @@
             var resizeTimeout;
             var viewHeight = 0;
 
+            var shouldIgnoreNgTableAfterReloadDataEvent = false;
+
             var shouldRedefineScrollPosition = false;
             var verticalScrollTimeout;
             var scrollOnTopAction = null;
@@ -224,12 +226,15 @@
             // @begin: scroll
 
             function disableVScrollListener(){
+                shouldIgnoreNgTableAfterReloadDataEvent = true;
                 $scrollable.off('scroll', verticalScrollHandler);
             }
 
             function enableVScrollListener(){
                 $timeout(function(){
+                    shouldIgnoreNgTableAfterReloadDataEvent = false;
                     $scrollable.on('scroll', verticalScrollHandler);
+                    transformTable();
                 },100);
             }
 
@@ -487,7 +492,14 @@
 
                 $($window).on('resize', resizeHandler);
                 var updateTableListener = $scope.$on('fixedHeader:updateTable', delayTransformTable);
-                var afterReloadDataListener = $scope.$on('ngTable:afterReloadData', delayTransformTable);
+
+                // TODO: review
+                // var afterReloadDataListener = $scope.$on('ngTable:afterReloadData', delayTransformTable);
+                var afterReloadDataListener = $scope.$on('ngTable:afterReloadData', function(){
+                    if(!shouldIgnoreNgTableAfterReloadDataEvent){
+                        delayTransformTable();
+                    }
+                });
 
                 // wait for data to load and then transform the table
                 var tableDataLoadedWatch = $scope.$watch(tableDataLoaded, function(isTableDataLoaded) {
@@ -525,6 +537,8 @@
                     defineColumnWidthFlag = null;
                     resizeTimeout = null;
                     viewHeight = null;
+
+                    shouldIgnoreNgTableAfterReloadDataEvent = null;
 
                     delayTransformTable = null;
 
