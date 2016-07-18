@@ -65,7 +65,7 @@
     //------------------------------------------------------------------------//
     // @begin: directive code
 
-    function fixedHeader($timeout, $window){
+    function fixedHeader($timeout, $window, $rootScope){
         var attr_prefix = 'fixedHeader';
         var ATTRS = {
             CHECK_WIDTH : attr_prefix + 'CheckWidth', // fixed-header-check-width
@@ -74,11 +74,19 @@
                 ON_BOTTOM : attr_prefix + 'ScrollOnBottom', // fixed-header-scroll-on-bottom
                 REDEFINE_POSITION : attr_prefix + 'ScrollRedefinePosition' // fixed-header-scroll-redefine-position
             },
-            ROW_CLASSNAME : attr_prefix + 'RowClassname' // fixed-header-row-classname
+            ROW_CLASSNAME : attr_prefix + 'RowClassname', // fixed-header-row-classname
+            LOADING : attr_prefix + 'Loading' // fixed-header-loading
         };
         var SCROLL_POSITION = {
             TOP : 'top',
             BOTTOM : 'bottom'
+        };
+        var EVENTS = {
+            FIXED_HEADER : {
+                UPDATE_TABLE : 'fixedHeader:updateTable',
+                LOADING : 'fixedHeader:loading' // TODO: review
+            },
+            NG_TABLE : 'ngTable:afterReloadData'
         };
 
         function postLink($scope, $elem, $attrs){
@@ -93,12 +101,16 @@
             var resizeTimeout;
             var viewHeight = 0;
 
-            var shouldIgnoreNgTableAfterReloadDataEvent = false;
-
             var shouldRedefineScrollPosition = false;
             var verticalScrollTimeout;
             var scrollOnTopAction = null;
             var scrollOnBottomAction = null;
+
+            //---
+
+            function triggerLoadingEvent(flag){ // TODO: review
+                $rootScope.$broadcast(EVENTS.FIXED_HEADER.LOADING, flag);
+            }
 
             //---
 
@@ -226,15 +238,14 @@
             // @begin: scroll
 
             function disableVScrollListener(){
-                shouldIgnoreNgTableAfterReloadDataEvent = true;
+                triggerLoadingEvent(true);
                 $scrollable.off('scroll', verticalScrollHandler);
             }
 
             function enableVScrollListener(){
                 $timeout(function(){
-                    shouldIgnoreNgTableAfterReloadDataEvent = false;
+                    triggerLoadingEvent(false);
                     $scrollable.on('scroll', verticalScrollHandler);
-                    transformTable();
                 },100);
             }
 
@@ -354,7 +365,8 @@
                         el = getElementOn(SCROLL_POSITION.TOP);
                     }
                     logScrollInfo(); // TODO: remove
-                    $scope.$apply(scrollOnTopAction);
+                    // $scope.$apply(scrollOnTopAction);
+                    $timeout(function(){$scope.$apply(scrollOnTopAction);});
                     if(shouldRedefineScrollPosition) {
                         redefineScrollPosition(SCROLL_POSITION.TOP, el);
                     } else {
@@ -367,7 +379,8 @@
                         el = getElementOn(SCROLL_POSITION.BOTTOM);
                     }
                     logScrollInfo(); // TODO: remove
-                    $scope.$apply(scrollOnBottomAction);
+                    // $scope.$apply(scrollOnBottomAction);
+                    $timeout(function(){$scope.$apply(scrollOnBottomAction);});
                     if(shouldRedefineScrollPosition) {
                         redefineScrollPosition(SCROLL_POSITION.BOTTOM, el);
                     } else {
@@ -491,15 +504,8 @@
                 //---
 
                 $($window).on('resize', resizeHandler);
-                var updateTableListener = $scope.$on('fixedHeader:updateTable', delayTransformTable);
-
-                // TODO: review
-                // var afterReloadDataListener = $scope.$on('ngTable:afterReloadData', delayTransformTable);
-                var afterReloadDataListener = $scope.$on('ngTable:afterReloadData', function(){
-                    if(!shouldIgnoreNgTableAfterReloadDataEvent){
-                        delayTransformTable();
-                    }
-                });
+                var updateTableListener = $scope.$on(EVENTS.FIXED_HEADER.UPDATE_TABLE, delayTransformTable);
+                var afterReloadDataListener = $scope.$on(EVENTS.NG_TABLE, delayTransformTable);
 
                 // wait for data to load and then transform the table
                 var tableDataLoadedWatch = $scope.$watch(tableDataLoaded, function(isTableDataLoaded) {
@@ -538,8 +544,6 @@
                     resizeTimeout = null;
                     viewHeight = null;
 
-                    shouldIgnoreNgTableAfterReloadDataEvent = null;
-
                     delayTransformTable = null;
 
                     shouldRedefineScrollPosition = null;
@@ -557,7 +561,7 @@
         };
     }
 
-    fixedHeader.$inject = ['$timeout', '$window'];
+    fixedHeader.$inject = ['$timeout', '$window', '$rootScope'];
 
     // @end: directive code
     //------------------------------------------------------------------------//
@@ -592,6 +596,7 @@
      *
      *     fixed-header-row-classname="rowClassName"
      *       define the class used on tbody TRs
+     *
      *   -->
      * >
      *   <!-- table content -->
