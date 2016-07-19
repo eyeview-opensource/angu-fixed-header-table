@@ -34,6 +34,11 @@
             return REGEXP.IS_INTEGER.test(strNum);
         }
 
+
+        function isBoolean(value) {
+            return typeof value === 'boolean';
+        }
+
         function getHeight(e){
             e.style.display = 'none';
             var p = angular.element(e.parentElement);
@@ -58,6 +63,7 @@
         return {
             debounce : debounce,
             isInteger : isInteger,
+            isBoolean : isBoolean,
             getHeight : getHeight
         };
     })();
@@ -84,7 +90,8 @@
         var EVENTS = {
             FIXED_HEADER : {
                 UPDATE_TABLE : 'fixedHeader:updateTable',
-                LOADING : 'fixedHeader:loading' // TODO: review
+                LOADING : 'fixedHeader:loading',
+                SCROLL_TO_TOP : 'fixedHeader:scrollToTop'
             },
             NG_TABLE : 'ngTable:afterReloadData'
         };
@@ -311,6 +318,10 @@
                 return el;
             }
 
+            function scrollToPosition(newPosition){
+                $scrollable.animate({scrollTop:newPosition}, 1500, 'swing');
+            }
+
             function redefineScrollPosition(position, el){
                 $timeout(function(){
                     el = findElementOn(position, el);
@@ -328,31 +339,29 @@
                     var height = $scrollable.height();
                     $scrollable.css({position : ''});
 
+                    var newTopPosition = 0;
+
                     switch(position){
                         case SCROLL_POSITION.TOP:
                             var tableHeader = wrap.querySelectorAll('table.shadowed thead');
                             var tableHeaderHeight = angular.element(tableHeader).height();
                             var rowHeight = el.height();
-                            var newTopPosition = 0;
                             if(offset > rowHeight){
                                 newTopPosition = (
                                     offset - tableHeaderHeight
                                 );
                             }
-                            // $scrollable.scrollTop(newTopPosition);
-                            $scrollable.animate({scrollTop:newTopPosition}, '800', 'swing');
-                            newTopPosition = null;
                             rowHeight = null;
                             tableHeaderHeight = null;
                             tableHeader = null;
                             break;
                         case SCROLL_POSITION.BOTTOM:
-                            var newTopPosition = ((offset + el.height()) - height);
-                            // $scrollable.scrollTop(newTopPosition);
-                            $scrollable.animate({scrollTop:newTopPosition}, '800', 'swing');
-                            newTopPosition = null;
+                            newTopPosition = ((offset + el.height()) - height);
                             break;
                     }
+
+                    scrollToPosition(newTopPosition);
+                    newTopPosition = null;
 
                     enableVScrollListener();
                     el = null;
@@ -375,39 +384,63 @@
                     scrollable.scrollHeight - scrollable.scrollTop - scrollable.clientHeight
                 );
 
+                // value expected to return from the scroll action callback execution
+                var redefineScrollPositionFlag = true;
+
                 if((scrollable.scrollTop <= offset) && scrollOnTopAction){
                     disableVScrollListener();
                     if(shouldRedefineScrollPosition) {
                         el = getElementOn(SCROLL_POSITION.TOP);
                     }
-                    logScrollInfo(); // TODO: remove
-                    // $scope.$apply(scrollOnTopAction);
-                    $timeout(function(){$scope.$apply(scrollOnTopAction);});
-                    if(shouldRedefineScrollPosition) {
-                        redefineScrollPosition(SCROLL_POSITION.TOP, el);
-                    } else {
-                        enableVScrollListener();
-                    }
-                    logScrollInfo(); // TODO: remove
+
+                    $timeout(function(){
+                        logScrollInfo(); // TODO: remove
+
+                        redefineScrollPositionFlag = $scope.$apply(scrollOnTopAction);
+                        redefineScrollPositionFlag = (
+                            Utils.isBoolean(redefineScrollPositionFlag) ? redefineScrollPositionFlag : false
+                        );
+
+                        if(shouldRedefineScrollPosition && redefineScrollPositionFlag) {
+                            redefineScrollPosition(SCROLL_POSITION.TOP, el);
+                        } else {
+                            enableVScrollListener();
+                        }
+
+                        logScrollInfo(); // TODO: remove
+
+                        redefineScrollPositionFlag = null;
+                        el = null;
+                    });
                 } else if((delta <= offset) && scrollOnBottomAction){
                     disableVScrollListener();
                     if(shouldRedefineScrollPosition) {
                         el = getElementOn(SCROLL_POSITION.BOTTOM);
                     }
-                    logScrollInfo(); // TODO: remove
-                    // $scope.$apply(scrollOnBottomAction);
-                    $timeout(function(){$scope.$apply(scrollOnBottomAction);});
-                    if(shouldRedefineScrollPosition) {
-                        redefineScrollPosition(SCROLL_POSITION.BOTTOM, el);
-                    } else {
-                        enableVScrollListener();
-                    }
-                    logScrollInfo(); // TODO: remove
+
+                    $timeout(function(){
+                        logScrollInfo(); // TODO: remove
+
+                        redefineScrollPositionFlag = $scope.$apply(scrollOnBottomAction);
+                        redefineScrollPositionFlag = (
+                            Utils.isBoolean(redefineScrollPositionFlag) ? redefineScrollPositionFlag : false
+                        );
+
+                        if(shouldRedefineScrollPosition && redefineScrollPositionFlag) {
+                            redefineScrollPosition(SCROLL_POSITION.BOTTOM, el);
+                        } else {
+                            enableVScrollListener();
+                        }
+
+                        logScrollInfo(); // TODO: remove
+
+                        redefineScrollPositionFlag = null;
+                        el = null;
+                    });
                 }
 
                 delta = null;
                 offset = null;
-                el = null;
             }
 
             function verticalScrollHandler(){
@@ -535,9 +568,20 @@
 
                 //---
 
+                var rowClassnameObserve = $attrs.$observe(ATTRS.ROW_CLASSNAME, function(newValue){
+                    rowClassname = newValue;
+                });
+
+                //---
+
                 $($window).on('resize', resizeHandler);
-                var updateTableListener = $scope.$on(EVENTS.FIXED_HEADER.UPDATE_TABLE, delayTransformTable);
                 var afterReloadDataListener = $scope.$on(EVENTS.NG_TABLE, delayTransformTable);
+                var updateTableListener = $scope.$on(EVENTS.FIXED_HEADER.UPDATE_TABLE, delayTransformTable);
+                var scrollToTopListener = $scope.$on(EVENTS.FIXED_HEADER.SCROLL_TO_TOP, function(){
+                    disableVScrollListener();
+                    scrollToPosition(0);
+                    enableVScrollListener();
+                });
 
                 // wait for data to load and then transform the table
                 var tableDataLoadedWatch = $scope.$watch(tableDataLoaded, function(isTableDataLoaded) {
@@ -547,12 +591,17 @@
                 });
 
                 $scope.$on('$destroy', function(){
-                    // remove listeners
+
+                    rowClassnameObserve();
+                    rowClassnameObserve = null;
+
                     $($window).off('resize', resizeHandler);
-                    updateTableListener();
-                    updateTableListener = null;
                     afterReloadDataListener();
                     afterReloadDataListener = null;
+                    updateTableListener();
+                    updateTableListener = null;
+                    scrollToTopListener();
+                    scrollToTopListener = null;
                     tableDataLoadedWatch();
                     tableDataLoadedWatch = null;
 
