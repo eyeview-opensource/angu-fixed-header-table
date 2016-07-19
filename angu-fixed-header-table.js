@@ -194,16 +194,6 @@
                         }
                     }, 50);
 
-                    // TODO: review
-                    // $scrollable.css({
-                    //     display: 'block',
-                    //     minWidth: '100%',
-                    //     overflowX: 'hidden',
-                    //     overflowY: 'auto',
-                    //     position: 'absolute'
-                    // });
-                    //updateViewHeight(true);
-
                     deferred.resolve('done');
                 });
 
@@ -394,7 +384,6 @@
                     }
 
                     $timeout(function(){
-                        logScrollInfo(); // TODO: remove
 
                         redefineScrollPositionFlag = $scope.$apply(scrollOnTopAction);
                         redefineScrollPositionFlag = (
@@ -407,8 +396,6 @@
                             enableVScrollListener();
                         }
 
-                        logScrollInfo(); // TODO: remove
-
                         redefineScrollPositionFlag = null;
                         el = null;
                     });
@@ -419,7 +406,6 @@
                     }
 
                     $timeout(function(){
-                        logScrollInfo(); // TODO: remove
 
                         redefineScrollPositionFlag = $scope.$apply(scrollOnBottomAction);
                         redefineScrollPositionFlag = (
@@ -431,8 +417,6 @@
                         } else {
                             enableVScrollListener();
                         }
-
-                        logScrollInfo(); // TODO: remove
 
                         redefineScrollPositionFlag = null;
                         el = null;
