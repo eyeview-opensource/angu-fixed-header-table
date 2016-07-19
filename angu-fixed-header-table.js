@@ -65,7 +65,7 @@
     //------------------------------------------------------------------------//
     // @begin: directive code
 
-    function fixedHeader($timeout, $window, $rootScope){
+    function fixedHeader($timeout, $window, $q, $rootScope){
         var attr_prefix = 'fixedHeader';
         var ATTRS = {
             CHECK_WIDTH : attr_prefix + 'CheckWidth', // fixed-header-check-width
@@ -100,6 +100,7 @@
             var defineColumnWidthFlag = false;
             var resizeTimeout;
             var viewHeight = 0;
+            var lastWindowHeight = 0;
 
             var shouldRedefineScrollPosition = false;
             var verticalScrollTimeout;
@@ -149,6 +150,7 @@
             }
 
             function transformTable(){
+                var deferred = $q.defer();
                 recloneHeaderAndFooter();
 
                 // wrap in $timeout to give table a chance to finish rendering
@@ -185,15 +187,20 @@
                         }
                     }, 50);
 
-                    $scrollable.css({
-                        display: 'block',
-                        minWidth: '100%',
-                        overflowX: 'hidden',
-                        overflowY: 'auto',
-                        position: 'absolute'
-                    });
-                    updateViewHeight(true);
+                    // TODO: review
+                    // $scrollable.css({
+                    //     display: 'block',
+                    //     minWidth: '100%',
+                    //     overflowX: 'hidden',
+                    //     overflowY: 'auto',
+                    //     position: 'absolute'
+                    // });
+                    //updateViewHeight(true);
+
+                    deferred.resolve('done');
                 });
+
+                return deferred.promise;
             }
 
             // for performance reasons, ignore events caused by rapidly repeating events
@@ -227,10 +234,19 @@
                 if(resizeTimeout){
                     $timeout.cancel(resizeTimeout);
                     resizeTimeout = null;
+                } else {
+                    lastWindowHeight = window.innerHeight;
                 }
+
                 resizeTimeout = $timeout(function(){
                     resizeTimeout = null;
-                    transformTable();
+                    transformTable()
+                        .then(function(){
+                            if(lastWindowHeight !== window.innerHeight){
+                                updateViewHeight(true);
+                            }
+                            lastWindowHeight = null;
+                        });
                 }, 100);
             }
 
@@ -491,6 +507,22 @@
                     if(scrollOnTopAction || scrollOnBottomAction){
                         $scrollable.on('scroll', verticalScrollHandler);
                     }
+
+                    // initial size definitions
+                    $timeout(function(){
+                        $scrollable.css({
+                            display: 'block',
+                            minWidth: '100%',
+                            overflowX: 'hidden',
+                            overflowY: 'auto',
+                            position: 'absolute'
+                        });
+
+                        var height = Utils.getHeight(wrap);
+                        scrollable.style.height = (height  + 'px');
+                        wrap.style.height = (height + 'px');
+                        height = null;
+                    });
                 });
             }
 
@@ -543,6 +575,7 @@
                     defineColumnWidthFlag = null;
                     resizeTimeout = null;
                     viewHeight = null;
+                    lastWindowHeight = null;
 
                     delayTransformTable = null;
 
@@ -561,7 +594,7 @@
         };
     }
 
-    fixedHeader.$inject = ['$timeout', '$window', '$rootScope'];
+    fixedHeader.$inject = ['$timeout', '$window', '$q', '$rootScope'];
 
     // @end: directive code
     //------------------------------------------------------------------------//
