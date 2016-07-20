@@ -358,15 +358,6 @@
                 });
             }
 
-            // TODO: remove
-            function logScrollInfo(){
-                console.log(
-                    'scrollable > scrollTop : ', scrollable.scrollTop,
-                    ' > scrollHeight : ', scrollable.scrollHeight,
-                    ' > clientHeight : ', scrollable.clientHeight
-                );
-            }
-
             function doVerticalScrollCheck(){
                 var el;
                 var offset = 0;
