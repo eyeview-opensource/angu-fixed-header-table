@@ -313,7 +313,9 @@
             }
 
             function scrollToPosition(newPosition){
-                $scrollable.animate({scrollTop:newPosition}, 1500, 'swing');
+                if($scrollable){
+                    $scrollable.animate({scrollTop:newPosition}, 1500, 'swing');
+                }
             }
 
             function redefineScrollPosition(position, el){
