@@ -252,13 +252,17 @@
 
             function disableVScrollListener(){
                 triggerLoadingEvent(true);
-                $scrollable.off('scroll', verticalScrollHandler);
+                if($scrollable){
+                    $scrollable.off('scroll', verticalScrollHandler);
+                }
             }
 
             function enableVScrollListener(){
                 $timeout(function(){
                     triggerLoadingEvent(false);
-                    $scrollable.on('scroll', verticalScrollHandler);
+                    if($scrollable){
+                        $scrollable.on('scroll', verticalScrollHandler);
+                    }
                 },100);
             }
 
