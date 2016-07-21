@@ -116,7 +116,7 @@
 
             //---
 
-            function triggerLoadingEvent(flag){ // TODO: review
+            function triggerLoadingEvent(flag){
                 $rootScope.$broadcast(EVENTS.FIXED_HEADER.LOADING, flag);
             }
 
