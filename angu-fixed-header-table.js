@@ -333,7 +333,7 @@
                     var currentScroll = $scrollable.scrollTop();
                     var offset = el.position().top + currentScroll;
                     var height = $scrollable.height();
-                    $scrollable.css({position : ''});
+                    $scrollable.css({position : 'absolute'});
 
                     var newTopPosition = 0;
 
