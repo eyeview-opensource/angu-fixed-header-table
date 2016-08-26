@@ -107,7 +107,6 @@
             var defineColumnWidthFlag = false;
             var resizeTimeout;
             var viewHeight = 0;
-            var lastWindowHeight = 0;
 
             var shouldRedefineScrollPosition = false;
             var verticalScrollTimeout;
@@ -142,18 +141,25 @@
                 if (!wrap || !elem || !$elem.is(':visible')) {
                     return;
                 }
-                if (refresh) {
-                    viewHeight = ($attrs.tableHeight === 'auto' || !$attrs.tableHeight) ?
-                        Utils.getHeight(wrap) : $attrs.tableHeight;
-                }
-                var height = viewHeight;
-                scrollable.style.height = Math.min(height, elem.offsetHeight) - (wrap.offsetHeight - wrap.clientHeight) + 'px';
+
                 if (wrap.offsetWidth < scrollable.offsetWidth) {
                     scrollable.style.paddingRight = (scrollable.offsetWidth - scrollable.clientWidth) + 'px';
                 } else {
                     scrollable.style.paddingRight = '0px';
                 }
-                wrap.style.height = Math.min(height, elem.offsetHeight) + 'px';
+
+                if (refresh) {
+                    var height = (
+                        (
+                            ($attrs.tableHeight === 'auto') ||
+                            !$attrs.tableHeight
+                        ) ?
+                        Utils.getHeight(wrap) : $attrs.tableHeight
+                    );
+                    scrollable.style.height = (height  + 'px');
+                    wrap.style.height = (height + 'px');
+                    height = null;
+                }
             }
 
             function transformTable(){
@@ -226,23 +232,39 @@
             }
 
             function resizeHandler(){
+                var self = this;
+                self.lastWindowHeight = self.lastWindowHeight || 0;
+
+                if(
+                    (self.shouldUpdateHeight === null) ||
+                    (self.shouldUpdateHeight === undefined)
+                ){
+                    self.shouldUpdateHeight = false;
+                }
+
                 checkWindowWidth();
+
+                if(
+                    (window.innerHeight < self.lastWindowHeight) ||
+                    (window.innerHeight > self.lastWindowHeight)
+                ){
+                    self.lastWindowHeight = window.innerHeight;
+                    self.shouldUpdateHeight = true;
+                }
 
                 if(resizeTimeout){
                     $timeout.cancel(resizeTimeout);
                     resizeTimeout = null;
-                } else {
-                    lastWindowHeight = window.innerHeight;
                 }
 
                 resizeTimeout = $timeout(function(){
                     resizeTimeout = null;
                     transformTable()
                         .then(function(){
-                            if(lastWindowHeight !== window.innerHeight){
+                            if(self.shouldUpdateHeight){
                                 updateViewHeight(true);
                             }
-                            lastWindowHeight = null;
+                            self.shouldUpdateHeight = false;
                         });
                 }, 100);
             }
@@ -606,7 +628,6 @@
                     defineColumnWidthFlag = null;
                     resizeTimeout = null;
                     viewHeight = null;
-                    lastWindowHeight = null;
 
                     delayTransformTable = null;
 
