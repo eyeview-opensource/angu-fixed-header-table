@@ -178,9 +178,24 @@
                         angular.forEach(cont.querySelectorAll('tr'), function(row, rowIndex) {
                             var rowWidth = 0;
                             angular.forEach(row.querySelectorAll('td,th'), function(cell, cellIndex) {
-                                var el = shadows[index].querySelector(
-                                    'tr:nth-child(' + (rowIndex+1) + ') ' +
-                                    cell.nodeName + ':nth-child(' + (cellIndex+1)  + ')');
+                                var el;
+                                if(shadows && shadows[index]) {
+                                    el = (
+                                        shadows[index]
+                                            .querySelector(
+                                                [
+                                                    'tr:nth-child(',
+                                                    (rowIndex+1),
+                                                    ') ',
+                                                    cell.nodeName,
+                                                    ':nth-child(',
+                                                    (cellIndex+1),
+                                                    ')'
+                                                ].join('')
+                                            )
+                                    );
+                                }
+
                                 if (!el) {
                                     return;
                                 }
