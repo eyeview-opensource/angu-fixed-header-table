@@ -578,8 +578,7 @@
                             tableLayout: 'fixed',
                             margin: 0,
                             padding: 0,
-                            zIndex: 10,
-                            width: 'auto'
+                            zIndex: 10
                         });
                         cloned.style.visibility = 'hidden';
                     }
