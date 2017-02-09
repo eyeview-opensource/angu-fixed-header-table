@@ -11,6 +11,7 @@
 
         var REGEXP = {
             IS_INTEGER : /^\+?\d+$/,
+            IS_TABLE_HEIGHT_VALUE : /((px|rem|%)|calc\((\s)?\d+(px|rem|%)\s-\s\d+(px|rem|%)(\s)?\))$/,
             PADDING_BOTTOM_REPLACE : /^(-?(?:\d)?(?:.\d+)?)[A-Za-z%]*$/
         };
 
@@ -29,6 +30,9 @@
             };
         }
 
+        function isTableHeightValue(strValue){
+            return REGEXP.IS_TABLE_HEIGHT_VALUE.test(strValue);
+        };
 
         function isInteger(strNum){
             return REGEXP.IS_INTEGER.test(strNum);
@@ -59,12 +63,18 @@
             return height;
         }
 
+        function extractNumber(fromStr){
+            return /\d+/.exec(fromStr)[0];
+        }
+
         //--- API
         return {
             debounce : debounce,
+            isTableHeightValue : isTableHeightValue,
             isInteger : isInteger,
             isBoolean : isBoolean,
-            getHeight : getHeight
+            getHeight : getHeight,
+            extractNumber : extractNumber
         };
     })();
 
@@ -74,6 +84,7 @@
     function fixedHeader($timeout, $window, $q, $rootScope){
         var attr_prefix = 'fixedHeader';
         var ATTRS = {
+            TABLE_HEIGHT : 'tableHeight', // table height
             CHECK_WIDTH : attr_prefix + 'CheckWidth', // fixed-header-check-width
             SCROLL : {
                 ON_TOP : attr_prefix + 'ScrollOnTop', // fixed-header-scroll-on-top
@@ -97,10 +108,13 @@
         };
 
         function postLink($scope, $elem, $attrs){
+            var tableHeight;
+
             var checkMinWidthValue = 1300;
             var rowClassname = '';
 
             var elem = $elem[0];
+            var elemParent = elem.parentNode;
             var wrap, $scrollable, scrollable;
 
             var checkWindowWidthFlag = false;
@@ -117,6 +131,20 @@
 
             function triggerLoadingEvent(flag){
                 $rootScope.$broadcast(EVENTS.FIXED_HEADER.LOADING, flag);
+            }
+
+            //---
+
+            function getTableHeight(){
+                var height;
+                if(Utils.isInteger(tableHeight)){
+                    height = tableHeight + 'px';
+                } else if(Utils.isTableHeightValue(tableHeight)){
+                    height = tableHeight;
+                } else {
+                    height = Utils.getHeight(wrap) + 'px';
+                }
+                return height;
             }
 
             //---
@@ -149,15 +177,9 @@
                 }
 
                 if (refresh) {
-                    var height = (
-                        (
-                            ($attrs.tableHeight === 'auto') ||
-                            !$attrs.tableHeight
-                        ) ?
-                        Utils.getHeight(wrap) : $attrs.tableHeight
-                    );
-                    scrollable.style.height = (height  + 'px');
-                    wrap.style.height = (height + 'px');
+                    var height = getTableHeight();
+                    scrollable.style.height = '100%';
+                    wrap.style.height = height;
                     height = null;
                 }
             }
@@ -480,8 +502,14 @@
             //---
 
             function checkAttrs(){
+                // table-height
+                if(angular.isDefined($attrs[ATTRS.TABLE_HEIGHT])){
+                    tableHeight = $attrs[ATTRS.TABLE_HEIGHT];
+                    tableHeight = tableHeight.trim();
+                }
+
+                // fixed-header-check-width
                 if(angular.isDefined($attrs[ATTRS.CHECK_WIDTH])){
-                    // if `fixed-header-check-width` is present
                     // this makes the code flow check the windows width on resize
                     checkWindowWidthFlag = true;
 
@@ -570,9 +598,9 @@
                             position: 'absolute'
                         });
 
-                        var height = Utils.getHeight(wrap);
-                        scrollable.style.height = (height  + 'px');
-                        wrap.style.height = (height + 'px');
+                        var height = getTableHeight();
+                        scrollable.style.height = '100%';
+                        wrap.style.height = height;
                         height = null;
                     });
                 });
@@ -681,6 +709,12 @@
      *
      * <table fixed-header
      *   <!-- optional:
+     *     table-height="value", where value could be:
+     *       auto - use the default calculation and get available space relative to windows height
+     *       number - is define a number for example, 200, that will be in pixel
+     *       80% - percentage heigh is also supported
+     *       200px - define a string with the unit is also supported, where the unit could be `px` or `rem`
+     *
      *     fixed-header-check-width or fixed-header-check-width="1200"
      *       if present define the code flow to check window width and that
      *       will change the code flow to update the table header UI
