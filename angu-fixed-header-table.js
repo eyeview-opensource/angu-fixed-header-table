@@ -706,7 +706,7 @@
      *     table-height="value", where value could be:
      *       auto - use the default calculation and get available space relative to windows height
      *       number - is define a number for example, 200, that will be in pixel
-     *       80% - percentage heigh is also supported
+     *       80% - percentage height is also supported
      *       200px - define a string with the unit is also supported, where the unit could be `px` or `rem`
      *
      *     fixed-header-check-width or fixed-header-check-width="1200"
