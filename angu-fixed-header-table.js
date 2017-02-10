@@ -63,18 +63,13 @@
             return height;
         }
 
-        function extractNumber(fromStr){
-            return /\d+/.exec(fromStr)[0];
-        }
-
         //--- API
         return {
             debounce : debounce,
             isTableHeightValue : isTableHeightValue,
             isInteger : isInteger,
             isBoolean : isBoolean,
-            getHeight : getHeight,
-            extractNumber : extractNumber
+            getHeight : getHeight
         };
     })();
 
