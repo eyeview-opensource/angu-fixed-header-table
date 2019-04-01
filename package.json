@@ -1,0 +1,19 @@
+{
+  "name": "angu-fixed-header-table",
+  "version": "1.0.0",
+  "description": "angu-fixed-header-table =======================",
+  "main": "angu-fixed-header-table.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eyeview-opensource/angu-fixed-header-table.git"
+  },
+  "author": "Jason Watmore <jason@pointblankdevelopment.com.au>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/eyeview-opensource/angu-fixed-header-table/issues"
+  },
+  "homepage": "https://github.com/eyeview-opensource/angu-fixed-header-table#readme"
+}
